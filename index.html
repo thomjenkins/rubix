@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rubix — F2L practice from scramble</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0f17;
+      --surface: #16162a;
+      --border: #2a2a42;
+      --text: #e8e8f0;
+      --muted: #8888aa;
+      --accent: #7c9cff;
+      --accent-hover: #9ab2ff;
+      --green: #6ee7a0;
+      --input-bg: #1a1a2e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+    }
+    h1 {
+      font-weight: 600;
+      font-size: 1.5rem;
+      letter-spacing: 0.02em;
+      margin: 0 0 0.25rem 0;
+      color: var(--text);
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .subtitle a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .subtitle a:hover { text-decoration: underline; }
+    .layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      justify-content: center;
+      align-items: flex-start;
+      max-width: 1200px;
+      width: 100%;
+    }
+    .cube-wrap {
+      width: min(90vw, 420px);
+      height: min(80vw, 420px);
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      min-width: 280px;
+      max-width: 360px;
+    }
+    .panel h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 0.75rem 0;
+    }
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 0.75rem;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      resize: vertical;
+      margin-bottom: 0.75rem;
+    }
+    textarea::placeholder { color: var(--muted); }
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: none;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+      line-height: 1.4;
+    }
+    .hint code {
+      background: var(--input-bg);
+      padding: 0.1em 0.4em;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .presets {
+      margin-top: 1rem;
+    }
+    .presets label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    .group-select {
+      width: 100%;
+      max-width: 100%;
+      padding: 0.4rem 0.5rem;
+      margin-bottom: 0.5rem;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .group-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .preset-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .preset-btns button {
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .preset-btns button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .move-hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rubix</h1>
+  <p class="subtitle">Start from a scramble to practice <a href="https://logiqx.github.io/cubing-algs/html/if2l.html" target="_blank" rel="noopener">intuitive F2L</a></p>
+
+  <div class="layout">
+    <div class="cube-wrap" id="cube-container"></div>
+
+    <div class="panel">
+      <h2>Scramble</h2>
+      <textarea id="scramble-input" placeholder="e.g. R U R' U'  or paste from F2L alg sites"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-apply">Apply scramble</button>
+        <button class="btn btn-ghost" id="btn-reset">Reset (solved)</button>
+      </div>
+      <p class="hint">Notation: <code>R L U D F B</code> (clockwise), <code>R'</code> / <code>R2</code>. Whole cube: <code>x</code> (like R), <code>y</code> (like U), <code>z</code> (like F). Then practice F2L.</p>
+
+      <div class="presets">
+        <label>Preloaded F2L cases (41)</label>
+        <select id="f2l-group" class="group-select" aria-label="Filter by group">
+        </select>
+        <div class="preset-btns" id="preset-btns"></div>
+      </div>
+
+      <p class="move-hint">Drag to rotate view. Faces: <kbd>R</kbd> <kbd>L</kbd> <kbd>U</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>B</kbd> (<kbd>'</kbd> / <kbd>2</kbd>). Whole cube: <kbd>x</kbd> <kbd>y</kbd> <kbd>z</kbd> (like R, U, F).</p>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

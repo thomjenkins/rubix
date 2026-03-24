@@ -2,6 +2,12 @@
 
 A small Rubik's cube simulator that **starts from a given scramble**, so you can drill intuitive F2L cases (e.g. from [logiqx F2L](https://logiqx.github.io/cubing-algs/html/if2l.html)) without rescrambling a real cube.
 
+## Deploy (GitHub Pages)
+
+1. In the repo on GitHub: **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**.
+2. Push to `main`; the workflow **Deploy GitHub Pages** uploads `index.html` and `js/`.
+3. Site URL: `https://<your-username>.github.io/rubix/` (for this fork: `https://thomjenkins.github.io/rubix/`).
+
 ## Run locally
 
 Serve the folder with any static server (ES modules need same-origin):

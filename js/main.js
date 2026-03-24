@@ -18,7 +18,12 @@ const groupSelect = document.getElementById('f2l-group');
 const container = document.getElementById('cube-container');
 
 let state = createSolvedState();
-const { updateState } = createScene(container);
+const { updateState } = createScene(container, {
+  onFaceTurn(move) {
+    applyMove(state, move);
+    updateState(state);
+  },
+});
 updateState(state);
 
 function setState(newState) {

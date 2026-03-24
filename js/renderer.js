@@ -30,7 +30,20 @@ const FACE_SIZE = 0.98;
 const GAP = 0.02;
 const FACELET_SIZE = (FACE_SIZE - 2 * GAP) / 3;
 
-export function createScene(container) {
+const FACE_LETTERS = ['U', 'D', 'F', 'B', 'R', 'L'];
+
+/** Min pointer travel (px) before a drag counts as a face turn. */
+const MIN_DRAG_PX = 12;
+
+/** Min in-plane drag (world units) to apply a move. */
+const MIN_DRAG_WORLD = 0.04;
+
+/**
+ * @param {HTMLElement} container
+ * @param {{ onFaceTurn?: (move: { face: string, prime: boolean, double: boolean }) => void }} [options]
+ */
+export function createScene(container, options = {}) {
+  const { onFaceTurn } = options;
   const width = container.clientWidth;
   const height = container.clientHeight;
   const scene = new THREE.Scene();
@@ -90,6 +103,124 @@ export function createScene(container) {
       faceletMeshes.push(mesh);
     }
   }
+
+  const raycaster = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+
+  /** @type {{ faceIndex: number, n: THREE.Vector3, u: THREE.Vector3, v: THREE.Vector3, worldPoint: THREE.Vector3, clientX: number, clientY: number, pointerId: number } | null} */
+  let faceDrag = null;
+
+  function pickFacelet(clientX, clientY) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    ndc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(faceletMeshes, false);
+    return hits[0] ?? null;
+  }
+
+  /**
+   * Intersect infinite plane (point P, unit-ish normal n) with ray; returns point or null.
+   */
+  function rayPlanePoint(ray, planePoint, planeNormal) {
+    const denom = ray.direction.dot(planeNormal);
+    if (Math.abs(denom) < 1e-6) return null;
+    const t = planePoint.clone().sub(ray.origin).dot(planeNormal) / denom;
+    if (t < 0) return null;
+    return ray.origin.clone().add(ray.direction.clone().multiplyScalar(t));
+  }
+
+  function tryApplyFaceTurn(clientX, clientY) {
+    if (!faceDrag || !onFaceTurn) return;
+
+    const dx = clientX - faceDrag.clientX;
+    const dy = clientY - faceDrag.clientY;
+    if (dx * dx + dy * dy < MIN_DRAG_PX * MIN_DRAG_PX) return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+    ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    ndc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    const ray = raycaster.ray;
+
+    const { n, u, v, worldPoint: P } = faceDrag;
+
+    const Q = rayPlanePoint(ray, P, n);
+    if (!Q) return;
+
+    const d = Q.clone().sub(P);
+    const dTan = d.sub(n.clone().multiplyScalar(d.dot(n)));
+    if (dTan.length() < MIN_DRAG_WORLD) return;
+
+    const eu = dTan.dot(u);
+    const ev = dTan.dot(v);
+    let prime;
+    if (Math.abs(eu) >= Math.abs(ev)) {
+      prime = eu < 0;
+    } else {
+      prime = ev < 0;
+    }
+
+    const face = FACE_LETTERS[faceDrag.faceIndex];
+    onFaceTurn({ face, prime, double: false });
+  }
+
+  function onPointerDown(e) {
+    if (e.button !== 0 || !onFaceTurn) return;
+    // Let Shift+drag keep camera orbit even when starting on a sticker.
+    if (e.shiftKey) return;
+
+    const hit = pickFacelet(e.clientX, e.clientY);
+    if (!hit) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    const faceIndex = hit.object.userData.faceIndex;
+    const axes = FACE_AXES[faceIndex];
+    faceDrag = {
+      faceIndex,
+      n: axes.n.clone(),
+      u: axes.u.clone(),
+      v: axes.v.clone(),
+      worldPoint: hit.point.clone(),
+      clientX: e.clientX,
+      clientY: e.clientY,
+      pointerId: e.pointerId,
+    };
+
+    try {
+      renderer.domElement.setPointerCapture(e.pointerId);
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function onPointerUp(e) {
+    if (!faceDrag || e.pointerId !== faceDrag.pointerId) return;
+    try {
+      renderer.domElement.releasePointerCapture(e.pointerId);
+    } catch (_) {
+      /* ignore */
+    }
+    tryApplyFaceTurn(e.clientX, e.clientY);
+    faceDrag = null;
+  }
+
+  function onPointerCancel(e) {
+    if (!faceDrag || e.pointerId !== faceDrag.pointerId) return;
+    try {
+      renderer.domElement.releasePointerCapture(e.pointerId);
+    } catch (_) {
+      /* ignore */
+    }
+    faceDrag = null;
+  }
+
+  const canvas = renderer.domElement;
+  canvas.addEventListener('pointerdown', onPointerDown, { capture: true });
+  window.addEventListener('pointerup', onPointerUp, { passive: true });
+  window.addEventListener('pointercancel', onPointerCancel, { passive: true });
 
   function updateState(state) {
     for (let i = 0; i < 54; i++) {

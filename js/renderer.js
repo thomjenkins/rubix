@@ -152,14 +152,25 @@ export function createScene(container, options = {}) {
     const dTan = d.sub(n.clone().multiplyScalar(d.dot(n)));
     if (dTan.length() < MIN_DRAG_WORLD) return;
 
-    const eu = dTan.dot(u);
-    const ev = dTan.dot(v);
-    let prime;
-    if (Math.abs(eu) >= Math.abs(ev)) {
-      prime = eu < 0;
-    } else {
-      prime = ev < 0;
+    // Turn direction: match rigid motion of this layer about axis `n` through the
+    // cube center. At hit point P, velocity for angular speed ω>0 is ω (n × r), r = P.
+    // Choose prime so stickers move along dTan (same sign as dot(dTan, n × r)).
+    // Center facelets: r ∥ n ⇒ n×r ≈ 0; use n × u (in-plane) as reference tangent.
+    const r = P;
+    const h = new THREE.Vector3().crossVectors(n, r);
+    let ref = h;
+    if (ref.lengthSq() < 1e-8) {
+      ref = new THREE.Vector3().crossVectors(n, u);
     }
+    if (ref.lengthSq() < 1e-8) {
+      ref = new THREE.Vector3().crossVectors(n, v);
+    }
+    ref.normalize();
+    const along = dTan.dot(ref);
+    if (Math.abs(along) < 1e-5) return;
+
+    // prime=false when drag matches +ω rotation (right-hand about outward n): v ∝ n×r.
+    const prime = along < 0;
 
     const face = FACE_LETTERS[faceDrag.faceIndex];
     onFaceTurn({ face, prime, double: false });
